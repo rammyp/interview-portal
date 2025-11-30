@@ -69,6 +69,28 @@ public class Singleton {
 ```
 
 ```java
+// Better approach - fast Billpaugh Singleton
+public class Singleton {
+    
+    // Private constructor
+    private Singleton() {
+        System.out.println("Singleton instance created");
+    }
+    
+    // Static inner holder class - loaded only when referenced
+    private static class SingletonHolder {
+        private static final Singleton INSTANCE = new Singleton();
+    }
+    
+    // Public access method
+    public static Singleton getInstance() {
+        return SingletonHolder.INSTANCE;
+    }
+}
+```
+
+
+```java
 // Best Approach - Enum Singleton
 public enum Singleton {
     INSTANCE;
