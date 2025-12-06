@@ -295,6 +295,101 @@ glue_context.write_dynamic_frame.from_options(
 
 ## Section 4: Integration & Security
 
+### AWS Glue and Athena Integration
+
+Glue and Athena integrate primarily through the **shared Data Catalog**:
+
+```
+┌─────────────┐      ┌──────────────────┐      ┌─────────────┐
+│   S3 Data   │ ──── │  Glue Crawler    │ ──── │ Data Catalog│
+└─────────────┘      └──────────────────┘      └──────┬──────┘
+                                                      │
+                            ┌─────────────────────────┼─────────────────────────┐
+                            │                         │                         │
+                            ▼                         ▼                         ▼
+                     ┌─────────────┐          ┌─────────────┐          ┌─────────────┐
+                     │   Athena    │          │  Glue ETL   │          │   Redshift  │
+                     │  (Query)    │          │  (Transform)│          │  Spectrum   │
+                     └─────────────┘          └─────────────┘          └─────────────┘
+```
+
+#### Typical Workflow
+
+**1. Raw Data Lands in S3**
+```
+s3://my-bucket/raw-data/
+├── 2024/01/data.json
+├── 2024/02/data.json
+└── 2024/03/data.json
+```
+
+**2. Glue Crawler Discovers Schema**
+- Scans S3 location
+- Infers schema and partitions
+- Creates table in Data Catalog
+
+**3. Athena Queries the Data**
+```sql
+-- Athena uses the table created by Glue
+SELECT * FROM my_database.raw_data
+WHERE year = '2024' AND month = '01'
+```
+
+**4. Glue ETL Transforms Data**
+```python
+# Read from catalog (same table Athena uses)
+source = glue_context.create_dynamic_frame.from_catalog(
+    database="my_database",
+    table_name="raw_data"
+)
+
+# Transform and write to processed location
+glue_context.write_dynamic_frame.from_options(
+    frame=transformed,
+    connection_type="s3",
+    connection_options={
+        "path": "s3://my-bucket/processed/",
+        "partitionKeys": ["year", "month"]
+    },
+    format="parquet"
+)
+```
+
+**5. Crawler Updates Catalog with Processed Data**
+
+**6. Athena Queries Optimized Data**
+```sql
+-- Query the transformed Parquet data
+SELECT customer_id, SUM(amount)
+FROM my_database.processed_data
+GROUP BY customer_id
+```
+
+#### Key Integration Points
+
+| Component | Role |
+|-----------|------|
+| **Glue Crawler** | Discovers schema, populates catalog |
+| **Glue Data Catalog** | Shared metadata store |
+| **Glue ETL** | Transforms raw → optimized formats |
+| **Athena** | Ad-hoc SQL queries on cataloged data |
+
+#### Common Use Cases
+
+- **Data Lake Analytics** — Glue crawls and catalogs raw data; Athena provides instant SQL access
+- **ETL + Query Pipeline** — Glue transforms JSON → Parquet; Athena queries optimized Parquet
+- **Schema Management** — Glue maintains schema versions; Athena automatically uses latest schema
+- **Partition Management** — Glue discovers partitions; Athena uses them for query optimization
+
+#### Benefits of Using Together
+
+- **No data movement** — Both read from S3
+- **Single metadata store** — No schema duplication
+- **Cost-effective** — Serverless, pay-per-use
+- **Separation of concerns** — Glue for ETL, Athena for queries
+
+---
+
 ### Supported Data Sources
 
 **AWS Services:**
