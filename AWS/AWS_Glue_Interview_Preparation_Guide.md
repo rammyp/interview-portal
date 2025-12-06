@@ -675,6 +675,116 @@ assumed = sts.assume_role(
 
 ## Section 7: Comparison Questions
 
+### Using EMR to Refresh Tables on New Data
+
+EMR can refresh tables when new data arrives using several approaches:
+
+#### 1. Partition Refresh (Hive/Spark SQL)
+```sql
+-- Discover new partitions automatically
+MSCK REPAIR TABLE my_database.my_table;
+
+-- Or add specific partition
+ALTER TABLE my_database.my_table 
+ADD PARTITION (year='2024', month='12') 
+LOCATION 's3://bucket/data/year=2024/month=12/';
+```
+
+#### 2. Incremental Data Load (Spark)
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("IncrementalLoad") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+# Read new data
+new_data = spark.read.parquet("s3://bucket/incoming/")
+
+# Append to existing table
+new_data.write \
+    .mode("append") \
+    .partitionBy("year", "month") \
+    .saveAsTable("my_database.my_table")
+```
+
+#### 3. Upsert with Delta Lake / Iceberg
+```python
+# Delta Lake MERGE (upsert)
+from delta.tables import DeltaTable
+
+delta_table = DeltaTable.forPath(spark, "s3://bucket/delta-table/")
+
+delta_table.alias("target").merge(
+    new_data.alias("source"),
+    "target.id = source.id"
+).whenMatchedUpdateAll() \
+ .whenNotMatchedInsertAll() \
+ .execute()
+```
+
+```python
+# Apache Iceberg MERGE
+spark.sql("""
+    MERGE INTO catalog.db.my_table t
+    USING new_data s
+    ON t.id = s.id
+    WHEN MATCHED THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+""")
+```
+
+#### 4. Triggering EMR on New Data
+
+```
+┌──────────┐     ┌──────────┐     ┌───────────────┐     ┌──────────┐
+│ S3 Event │ ──▶ │  Lambda  │ ──▶ │Step Functions │ ──▶ │   EMR    │
+└──────────┘     └──────────┘     └───────────────┘     └──────────┘
+```
+
+**Lambda + EMR Steps:**
+```python
+import boto3
+
+def lambda_handler(event, context):
+    emr = boto3.client('emr')
+    
+    emr.add_job_flow_steps(
+        JobFlowId='j-XXXXXXXXXXXXX',
+        Steps=[{
+            'Name': 'Refresh Table',
+            'ActionOnFailure': 'CONTINUE',
+            'HadoopJarStep': {
+                'Jar': 'command-runner.jar',
+                'Args': ['spark-submit', 's3://bucket/scripts/refresh.py']
+            }
+        }]
+    )
+```
+
+#### EMR vs Glue for Table Refresh
+
+| Aspect | EMR | Glue |
+|--------|-----|------|
+| Startup time | 5-15 min (cluster) | Seconds (serverless) |
+| Best for | Long-running, complex jobs | Quick ETL tasks |
+| Cost model | EC2 instance hours | DPU hours |
+| Customization | Full control | Limited |
+| Delta/Iceberg support | Native | Limited |
+
+#### When to Use Which for Table Refresh
+
+| Scenario | Best Choice |
+|----------|-------------|
+| Frequent small updates | Glue (faster startup) |
+| Large batch processing | EMR |
+| ACID transactions needed | EMR with Delta/Iceberg |
+| Already have EMR cluster | EMR Steps |
+| Serverless preference | Glue |
+
+---
+
 ### Glue vs EMR
 
 | Aspect | AWS Glue | Amazon EMR |
