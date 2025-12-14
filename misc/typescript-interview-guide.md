@@ -1060,16 +1060,37 @@ let consumeDog: Consumer<Dog> = consumeAnimal; // ✅ OK
 **Answer**:
 
 ```typescript
-type DeepReadonly<T> = {
+// Basic version
+type DeepReadonlyBasic<T> = {
   readonly [P in keyof T]: T[P] extends object
     ? T[P] extends Function
       ? T[P]
-      : DeepReadonly<T[P]>
+      : DeepReadonlyBasic<T[P]>
     : T[P];
 };
 
+// Robust version (handles Date, Map, Set, Arrays, and other built-ins)
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+type DeepReadonly<T> = T extends Primitive | Function
+  ? T
+  : T extends Date | RegExp | Error
+    ? T
+    : T extends Map<infer K, infer V>
+      ? ReadonlyMap<K, DeepReadonly<V>>
+      : T extends Set<infer U>
+        ? ReadonlySet<DeepReadonly<U>>
+        : T extends Array<infer U>
+          ? ReadonlyArray<DeepReadonly<U>>
+          : T extends object
+            ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+            : T;
+
 interface User {
   name: string;
+  createdAt: Date;
+  tags: string[];
+  metadata: Map<string, any>;
   address: {
     city: string;
     country: string;
@@ -1080,11 +1101,17 @@ type ReadonlyUser = DeepReadonly<User>;
 
 const user: ReadonlyUser = {
   name: "Alice",
+  createdAt: new Date(),
+  tags: ["admin", "active"],
+  metadata: new Map(),
   address: { city: "NYC", country: "USA" }
 };
 
 // user.name = "Bob";              // ❌ Error
 // user.address.city = "LA";       // ❌ Error
+// user.tags.push("new");          // ❌ Error - ReadonlyArray
+// user.tags[0] = "user";          // ❌ Error
+// user.createdAt.getTime();       // ✅ OK - Date methods still work
 ```
 
 ---
