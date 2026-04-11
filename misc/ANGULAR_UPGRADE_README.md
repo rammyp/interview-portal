@@ -233,6 +233,78 @@ ng update @angular/core@{version} @angular/cli@{version}
 
 ---
 
+## Dry Run Before Upgrading
+
+Always perform a dry run **before applying any upgrade** to detect peer dependency conflicts early.
+
+### Step 1 — Dry Run for Each Version
+
+Run one major version at a time:
+
+```bash
+# Check Angular 18 upgrade impact (without applying anything)
+ng update @angular/core@18 @angular/cli@18 --dry-run
+
+# Then check 19
+ng update @angular/core@19 @angular/cli@19 --dry-run
+
+# Then check 20
+ng update @angular/core@20 @angular/cli@20 --dry-run
+```
+
+### Step 2 — Force-Check All Peer Dependencies
+
+```bash
+# Lists everything that would be updated + any peer conflicts
+ng update --dry-run
+
+# npm-level peer dep check (more detailed)
+npm install --dry-run
+
+# Most verbose — shows full peer dep tree and conflicts
+npm ls
+```
+
+### Step 3 — Reading the Output
+
+| Output Message                  | What it means                                              |
+|---------------------------------|------------------------------------------------------------|
+| `Package needs to be updated`   | Safe to update                                             |
+| `Incompatible peer dependency`  | ⚠️ A library doesn't support the target Angular version yet |
+| `ng update` with package list   | These will be auto-migrated                                |
+| `Would update ...`              | Dry run succeeded, safe to apply                           |
+
+### Step 4 — Deep Peer Dependency Audit
+
+```bash
+# Check for ALL peer dep issues across your whole project
+npm install --legacy-peer-deps --dry-run
+
+# Or with npx to get a visual dep tree
+npx npm-check-updates --target minor
+npx npm-check-updates --target latest
+```
+
+### Common Peer Dependency Failures to Watch For
+
+| Library            | Common Issue                                              |
+|--------------------|-----------------------------------------------------------|
+| `@angular/material` | Must match `@angular/core` major version exactly         |
+| `@ngrx/store`      | Has its own Angular version compatibility matrix          |
+| `rxjs`             | Angular 18+ requires RxJS ≥ 7.4                          |
+| `typescript`       | Each Angular version has a strict TS version range        |
+| `zone.js`          | Must be compatible with the Angular version               |
+
+### Pro Tip
+
+If you see peer dep failures, run this to get a clear picture of what conflicts with what:
+
+```bash
+ng update @angular/core@18 @angular/cli@18 --dry-run --verbose
+```
+
+---
+
 ## Notes
 
 - Always back up your project or work on a dedicated branch before upgrading.
