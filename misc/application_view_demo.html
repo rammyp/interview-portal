@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application View — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #F4F5F7;
+    --surface:    #FFFFFF;
+    --border:     #E2E4E9;
+    --border-mid: #D0D3DB;
+    --text-pri:   #111827;
+    --text-sec:   #4B5563;
+    --text-muted: #9CA3AF;
+
+    --amber-bg:  #FEF3C7; --amber-txt: #92400E; --amber-dot: #D97706;
+    --green-bg:  #D1FAE5; --green-txt: #065F46; --green-dot: #059669;
+    --blue-bg:   #DBEAFE; --blue-txt:  #1E40AF; --blue-dot:  #3B82F6;
+    --red-bg:    #FEE2E2; --red-txt:   #991B1B; --red-dot:   #EF4444;
+    --open-bg:   #F3F4F6; --open-txt:  #374151; --open-dot:  #6B7280;
+
+    --radius: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-pri); min-height: 100vh; }
+
+  /* ── Nav ── */
+  .topnav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .nav-brand { font-size: 15px; font-weight: 600; color: var(--text-pri); letter-spacing: -0.3px; }
+  .nav-brand span { color: var(--blue-dot); }
+  .nav-crumb { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .nav-crumb strong { color: var(--text-sec); font-weight: 500; }
+
+  /* ── Tabs ── */
+  .role-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; }
+  .role-tab { padding: 14px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.18s; font-family: 'DM Sans', sans-serif; }
+  .role-tab:hover { color: var(--text-sec); }
+  .role-tab.active { color: var(--text-pri); border-bottom-color: var(--text-pri); font-weight: 600; }
+  .role-tab.first-tab { color: var(--blue-txt); }
+  .role-tab.first-tab.active { border-bottom-color: var(--blue-dot); color: var(--blue-dot); }
+
+  /* ── Page ── */
+  .page { max-width: 720px; margin: 32px auto; padding: 0 16px 64px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .view.active .exp-panel { animation: fadeUp 0.22s ease both; }
+
+  /* ── Panel ── */
+  .exp-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .exp-header { display: flex; align-items: center; padding: 0 20px; min-height: 56px; cursor: pointer; user-select: none; gap: 14px; transition: background 0.15s; }
+  .exp-header:hover { background: #FAFAFA; }
+  .header-title { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-pri); letter-spacing: -0.2px; }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chevron { width: 18px; height: 18px; color: var(--text-muted); transition: transform 0.22s ease; flex-shrink: 0; }
+  .chevron.open { transform: rotate(180deg); }
+  .exp-body { overflow: hidden; transition: max-height 0.28s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ── Badges ── */
+  .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .badge.open       { background: var(--open-bg);  color: var(--open-txt);  }
+  .badge.submitted  { background: var(--amber-bg); color: var(--amber-txt); }
+  .badge.locked     { background: var(--green-bg); color: var(--green-txt); }
+  .badge.sent       { background: var(--red-bg);   color: var(--red-txt);   }
+  .badge.submitted-b{ background: var(--blue-bg);  color: var(--blue-txt);  }
+
+  /* ── Buttons ── */
+  .btn { padding: 6px 13px; font-size: 12px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border-mid); background: var(--surface); color: var(--text-sec); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover:not(:disabled) { background: var(--bg); border-color: #B0B5BF; }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+  .btn.danger  { background: var(--red-dot);  border-color: var(--red-dot);  color: #fff; font-weight: 600; }
+  .btn.danger:hover:not(:disabled)  { background: #DC2626; border-color: #DC2626; }
+  .btn.danger:disabled  { background: var(--red-bg);  border-color: #FECACA; color: var(--red-txt); opacity: 0.4; }
+  .btn.primary { background: var(--blue-dot); border-color: var(--blue-dot); color: #fff; font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { background: #2563EB; border-color: #2563EB; }
+  .btn.primary:disabled { background: var(--blue-bg); border-color: var(--blue-bg); color: var(--blue-txt); opacity: 0.4; }
+
+  /* ── Divider / label ── */
+  .divider { height: 1px; background: var(--border); }
+  .sec-label { padding: 14px 20px 10px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; font-family: 'DM Mono', monospace; }
+
+  /* ── Hidden sections ── */
+  .panel-section { display: none; }
+  .panel-section.visible { display: block; }
+
+  /* ── Send back textarea ── */
+  .sendback-area { padding: 16px 20px; background: #FFFBF5; border-bottom: 1px solid #FDE68A; display: none; }
+  .sendback-area.visible { display: block; }
+  .sendback-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; display: block; }
+  .sendback-textarea { width: 100%; min-height: 90px; padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text-pri); background: var(--surface); border: 1px solid var(--border-mid); border-radius: var(--radius); resize: vertical; outline: none; transition: border-color 0.15s; line-height: 1.55; }
+  .sendback-textarea:focus { border-color: var(--blue-dot); }
+  .sendback-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+  /* ── Doc row ── */
+  .doc-row { display: flex; align-items: center; gap: 12px; padding: 12px 20px 16px; }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-icon { width: 40px; height: 40px; border-radius: var(--radius); background: var(--red-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .doc-icon svg { color: var(--red-txt); }
+  .doc-name { font-size: 13px; font-weight: 500; color: var(--text-pri); margin-bottom: 3px; }
+  .doc-meta { font-size: 11.5px; color: var(--text-muted); }
+  .dl-btn { width: 34px; height: 34px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text-sec); transition: all 0.15s; text-decoration: none; }
+  .dl-btn:hover { background: var(--blue-bg); border-color: var(--blue-dot); color: var(--blue-txt); }
+  .doc-note { margin: 0 20px 14px; font-size: 11.5px; color: var(--text-muted); background: var(--bg); border-radius: var(--radius); padding: 7px 12px; border: 1px solid var(--border); font-style: italic; }
+
+  /* ── Activity entry ── */
+  .entry { padding: 14px 20px; }
+  .entry.latest { background: #FAFBFC; }
+  .entry-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .entry-meta { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .entry-meta .author { font-family: 'DM Sans', sans-serif; font-weight: 500; color: var(--text-sec); }
+  .sep { margin: 0 6px; opacity: 0.4; }
+  .entry-comment { font-size: 13px; color: var(--text-pri); line-height: 1.65; }
+
+  /* ── Modals ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal-box { background: var(--surface); border-radius: 8px; box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08); width: 100%; max-width: 460px; margin: 0 16px; animation: modalIn 0.2s ease both; }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 15px; font-weight: 600; color: var(--text-pri); letter-spacing: -0.3px; }
+  .modal-body { padding: 20px 24px; }
+  .modal-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; display: block; }
+  .modal-textarea { width: 100%; min-height: 90px; padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text-pri); background: var(--surface); border: 1px solid var(--border-mid); border-radius: var(--radius); resize: vertical; outline: none; transition: border-color 0.15s; line-height: 1.55; }
+  .modal-textarea:focus { border-color: var(--blue-dot); }
+  .modal-footer { padding: 14px 24px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── Upload ── */
+  .upload-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 12px 14px; border: 1.5px dashed var(--border-mid); border-radius: var(--radius); background: var(--bg); cursor: pointer; transition: all 0.15s; }
+  .upload-row:hover { border-color: var(--blue-dot); background: var(--blue-bg); }
+  .upload-row.has-file { border-style: solid; border-color: var(--green-dot); background: var(--green-bg); }
+  .upload-left { display: flex; align-items: center; gap: 10px; }
+  .upload-text { font-size: 13px; color: var(--text-sec); }
+  .upload-subtext { font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 1px; }
+  .upload-icon-btn { width: 34px; height: 34px; border-radius: var(--radius); border: 1px solid var(--border-mid); background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--text-sec); flex-shrink: 0; transition: all 0.15s; }
+  .upload-row:hover .upload-icon-btn { border-color: var(--blue-dot); color: var(--blue-dot); background: #fff; }
+  .upload-row.has-file .upload-icon-btn { border-color: var(--green-dot); color: var(--green-txt); background: #fff; }
+
+  /* ── Lock dialog ── */
+  .dialog-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 300; align-items: center; justify-content: center; }
+  .dialog-overlay.visible { display: flex; }
+  .dialog-box { background: var(--surface); border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); padding: 28px 28px 22px; max-width: 380px; width: 100%; margin: 0 16px; animation: modalIn 0.18s ease both; }
+  .dialog-title { font-size: 15px; font-weight: 600; color: var(--text-pri); margin-bottom: 10px; }
+  .dialog-msg { font-size: 13px; color: var(--text-sec); line-height: 1.65; margin-bottom: 24px; }
+  .dialog-msg strong { color: var(--text-pri); }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ── Info banner (first submission tab) ── */
+  .info-banner { margin: 0 0 0 0; padding: 10px 16px; background: var(--blue-bg); border: 1px solid #BFDBFE; border-radius: var(--radius); font-size: 12.5px; color: var(--blue-txt); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-brand">Permit<span>Flow</span></div>
+  <div class="nav-crumb">
+    Applications
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <strong>View application</strong>
+  </div>
+</nav>
+
+<div class="role-bar">
+  <button class="role-tab first-tab active" onclick="switchRole('first', this)">First submission</button>
+  <button class="role-tab" id="tab-reviewer" onclick="switchRole('reviewer', this)" style="display:none">Reviewer view</button>
+  <button class="role-tab" id="tab-approver" onclick="switchRole('approver', this)" style="display:none">Approver view</button>
+</div>
+
+<div class="page">
+
+  <!-- ══════════ TAB 1: FIRST SUBMISSION ══════════ -->
+  <div class="view active" id="view-first">
+    <div class="info-banner">This tab shows the initial open state. Use "Submit for review" to demo the first submission flow. Reviewer and Approver view tabs are pre-populated with post-submission data.</div>
+    <div class="exp-panel">
+      <div class="exp-header" onclick="togglePanel(this)">
+        <span class="header-title">May 2026 Package</span>
+        <div class="header-right">
+          <span class="badge open">Open</span>
+          <button class="btn primary" onclick="event.stopPropagation(); openFirstSubmitModal()">Submit for review</button>
+        </div>
+        <svg class="chevron open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="exp-body" id="first-body">
+        <!-- Empty on open state — no sections yet -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════ TAB 2: REVIEWER VIEW (post-submission, shared state) ══════════ -->
+  <div class="view" id="view-reviewer">
+    <div class="exp-panel">
+      <div class="exp-header" onclick="togglePanel(this)">
+        <span class="header-title">May 2026 Package</span>
+        <div class="header-right">
+          <span class="badge submitted" id="rev-badge"><span id="rev-badge-text">Submitted</span></span>
+          <button class="btn primary" id="btn-submit-for-review" disabled onclick="event.stopPropagation(); openResubmitModal()">Submit for review</button>
+        </div>
+        <svg class="chevron open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="exp-body" id="rev-body">
+
+        <div class="divider"></div>
+        <div class="sec-label">Supporting documentation</div>
+        <div class="divider"></div>
+        <div class="doc-row">
+          <div class="doc-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="doc-info">
+            <div class="doc-name" id="rev-doc-name">env_impact_assessment_v1.pdf</div>
+            <div class="doc-meta" id="rev-doc-meta">3.4 MB · Uploaded by Sarah Mitchell · 1 May 2026, 09:14 AM</div>
+          </div>
+          <a class="dl-btn" href="#" title="Download file" onclick="event.preventDefault()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>
+        </div>
+        <div class="doc-note">Only the latest file is stored. Previous versions are no longer available.</div>
+
+        <div class="divider"></div>
+        <div class="sec-label">Activity log</div>
+        <div id="rev-log">
+          <div class="divider"></div>
+          <div class="entry latest">
+            <div class="entry-header">
+              <div class="entry-meta">1 May 2026, 09:14 AM<span class="sep">|</span><span class="author">Sarah Mitchell</span></div>
+              <span class="badge submitted">Submitted</span>
+            </div>
+            <div class="entry-comment">Reviewed all statements and submitting for review with additional documentation.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════ TAB 3: APPROVER VIEW (post-submission, shared state) ══════════ -->
+  <div class="view" id="view-approver">
+    <div class="exp-panel">
+      <div class="exp-header" onclick="togglePanel(this)">
+        <span class="header-title">May 2026 Package</span>
+        <div class="header-right">
+          <span class="badge submitted" id="app-badge"><span id="app-badge-text">Submitted</span></span>
+          <button class="btn danger"  id="btn-sendback" onclick="event.stopPropagation(); openSendBack()">Send back for review</button>
+          <button class="btn primary" id="btn-lock"     onclick="event.stopPropagation(); openLockDialog()">Lock Month</button>
+        </div>
+        <svg class="chevron open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="exp-body" id="app-body">
+
+        <!-- Send back textarea -->
+        <div class="sendback-area" id="sendback-area">
+          <span class="sendback-label">Reason for sending back</span>
+          <textarea class="sendback-textarea" id="sendback-comment" placeholder="Add your comment explaining what needs to be revised…" oninput="onSendbackInput()"></textarea>
+          <div class="sendback-actions">
+            <button class="btn" onclick="cancelSendBack()">Cancel</button>
+            <button class="btn primary" id="btn-sendback-submit" disabled onclick="submitSendBack()">Submit request</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="sec-label">Supporting documentation</div>
+        <div class="divider"></div>
+        <div class="doc-row">
+          <div class="doc-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="doc-info">
+            <div class="doc-name" id="app-doc-name">env_impact_assessment_v1.pdf</div>
+            <div class="doc-meta" id="app-doc-meta">3.4 MB · Uploaded by Sarah Mitchell · 1 May 2026, 09:14 AM</div>
+          </div>
+          <a class="dl-btn" href="#" title="Download file" onclick="event.preventDefault()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>
+        </div>
+        <div class="doc-note">Only the latest file is stored. Previous versions are no longer available.</div>
+
+        <div class="divider"></div>
+        <div class="sec-label">Activity log</div>
+        <div id="app-log">
+          <div class="divider"></div>
+          <div class="entry latest">
+            <div class="entry-header">
+              <div class="entry-meta">1 May 2026, 09:14 AM<span class="sep">|</span><span class="author">Sarah Mitchell</span></div>
+              <span class="badge submitted">Submitted</span>
+            </div>
+            <div class="entry-comment">Reviewed all statements and submitting for review with additional documentation.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══ FIRST SUBMIT MODAL ══ -->
+<div class="modal-overlay" id="first-submit-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Submit May 2026 Package for approval</div>
+    </div>
+    <div class="modal-body">
+      <span class="modal-label">Comment <span style="color:var(--red-dot)">*</span></span>
+      <textarea class="modal-textarea" id="first-comment" oninput="validateFirst()">Reviewed all statements and submitting for review with additional documentation.</textarea>
+      <div class="upload-row" id="first-upload-row" onclick="document.getElementById('first-file-input').click()">
+        <div class="upload-left">
+          <div id="first-upload-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div>
+            <div class="upload-text" id="first-upload-text">Attach supporting documentation <span style="color:var(--red-dot)">*</span></div>
+            <span class="upload-subtext" id="first-upload-subtext">PDF, DOCX, XLSX up to 20MB</span>
+          </div>
+        </div>
+        <div class="upload-icon-btn" id="first-upload-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+      </div>
+      <input type="file" id="first-file-input" style="display:none" accept=".pdf,.docx,.xlsx" onchange="onFirstFileSelected(this)">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeFirstSubmitModal()">Cancel</button>
+      <button class="btn primary" id="btn-first-submit" disabled onclick="submitFirst()">Submit request</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ RESUBMIT MODAL ══ -->
+<div class="modal-overlay" id="resubmit-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Re-submit May 2026 Package for approval</div>
+    </div>
+    <div class="modal-body">
+      <span class="modal-label">Comment <span style="color:var(--red-dot)">*</span></span>
+      <textarea class="modal-textarea" id="resubmit-comment" oninput="validateResubmit()">Reviewed all statements and submitting for review with additional documentation.</textarea>
+      <div class="upload-row" id="upload-row" onclick="document.getElementById('file-input').click()">
+        <div class="upload-left">
+          <div id="upload-file-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div>
+            <div class="upload-text" id="upload-text">Attach supporting documentation <span style="color:var(--red-dot)">*</span></div>
+            <span class="upload-subtext" id="upload-subtext">PDF, DOCX, XLSX up to 20MB</span>
+          </div>
+        </div>
+        <div class="upload-icon-btn" id="upload-icon-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+      </div>
+      <input type="file" id="file-input" style="display:none" accept=".pdf,.docx,.xlsx" onchange="onFileSelected(this)">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeResubmitModal()">Cancel</button>
+      <button class="btn primary" id="btn-resubmit" disabled onclick="submitResubmit()">Submit request</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ LOCK CONFIRM DIALOG ══ -->
+<div class="dialog-overlay" id="lock-dialog">
+  <div class="dialog-box">
+    <div class="dialog-title">Lock May 2026 Package</div>
+    <div class="dialog-msg">Are you sure you want to lock the package for <strong>May 2026</strong>? The changes can't be undone!</div>
+    <div class="dialog-actions">
+      <button class="btn" onclick="closeLockDialog()">Cancel</button>
+      <button class="btn primary" onclick="confirmLock()">Lock Month</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  var selectedFileFirst  = null;
+  var selectedFile       = null;
+
+  // ── Role switcher ──
+  function switchRole(role, btn) {
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + role).classList.add('active');
+    setTimeout(() => {
+      document.querySelectorAll('#view-' + role + ' .exp-body').forEach(initBody);
+    }, 10);
+  }
+
+  // ── Panel ──
+  function togglePanel(header) {
+    const body    = header.nextElementSibling;
+    const chevron = header.querySelector('.chevron');
+    const isOpen  = chevron.classList.contains('open');
+    body.style.maxHeight = isOpen ? '0px' : body.scrollHeight + 'px';
+    chevron.classList.toggle('open', !isOpen);
+  }
+  function initBody(body) {
+    const chevron = body.previousElementSibling.querySelector('.chevron');
+    body.style.maxHeight = (chevron && chevron.classList.contains('open')) ? body.scrollHeight + 'px' : '0px';
+  }
+  function refreshHeight(id) {
+    const b = document.getElementById(id);
+    if (b) b.style.maxHeight = b.scrollHeight + 'px';
+  }
+
+  // ── Helpers ──
+  function nowStamp() {
+    const now = new Date();
+    const d = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const t = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return d + ', ' + t;
+  }
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function setBadge(badgeId, textId, cls, text) {
+    document.getElementById(badgeId).className = 'badge ' + cls;
+    document.getElementById(textId).textContent = text;
+  }
+  function prependEntry(logId, stamp, author, badgeClass, badgeText, comment) {
+    if (badgeClass === 'sent') badgeText = 'Open - Sent for revision';
+    document.querySelectorAll('#' + logId + ' .entry').forEach(e => e.classList.remove('latest'));
+    const log = document.getElementById(logId);
+    const w = document.createElement('div');
+    w.innerHTML =
+      '<div class="divider"></div>' +
+      '<div class="entry latest">' +
+        '<div class="entry-header">' +
+          '<div class="entry-meta">' + stamp + '<span class="sep">|</span><span class="author">' + author + '</span></div>' +
+          '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
+        '</div>' +
+        '<div class="entry-comment">' + escHtml(comment) + '</div>' +
+      '</div>';
+    log.insertBefore(w, log.firstChild);
+  }
+  function updateDocs(fname, fsize, stamp) {
+    const name = fname || '(no file attached)';
+    const meta = fname ? fsize + ' · Uploaded by Sarah Mitchell · ' + stamp : 'No file uploaded';
+    ['rev','app'].forEach(p => {
+      document.getElementById(p + '-doc-name').textContent = name;
+      document.getElementById(p + '-doc-meta').textContent = meta;
+    });
+  }
+
+  // ── FIRST SUBMISSION (Tab 1 — isolated, just demos the modal) ──
+  function openFirstSubmitModal() {
+    document.getElementById('first-submit-modal').classList.add('visible');
+  }
+  function closeFirstSubmitModal() {
+    document.getElementById('first-submit-modal').classList.remove('visible');
+    resetFirstUpload();
+    document.getElementById('btn-first-submit').disabled = true;
+  }
+  function validateFirst() {
+    const hasComment = document.getElementById('first-comment').value.trim().length > 0;
+    document.getElementById('btn-first-submit').disabled = !(hasComment && selectedFileFirst);
+  }
+  function onFirstFileSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    selectedFileFirst = input.files[0];
+    const size = (selectedFileFirst.size / (1024*1024)).toFixed(1) + ' MB';
+    document.getElementById('first-upload-row').classList.add('has-file');
+    document.getElementById('first-upload-text').textContent = selectedFileFirst.name;
+    document.getElementById('first-upload-subtext').textContent = size;
+    document.getElementById('first-upload-icon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green-dot)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    document.getElementById('first-upload-btn').innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    validateFirst();
+  }
+  function resetFirstUpload() {
+    selectedFileFirst = null;
+    document.getElementById('first-file-input').value = '';
+    document.getElementById('first-upload-row').classList.remove('has-file');
+    document.getElementById('first-upload-text').innerHTML = 'Attach supporting documentation <span style="color:var(--red-dot)">*</span>';
+    document.getElementById('first-upload-subtext').textContent = 'PDF, DOCX, XLSX up to 20MB';
+    document.getElementById('first-upload-icon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    document.getElementById('first-upload-btn').innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+  }
+  function submitFirst() {
+    closeFirstSubmitModal();
+    // Show a simple confirmation inside the first tab panel
+    const body = document.getElementById('first-body');
+    body.innerHTML =
+      '<div class="divider"></div>' +
+      '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">' +
+        '✓ Submitted successfully. Switch to <strong style="color:var(--text-sec)">Reviewer view</strong> or <strong style="color:var(--text-sec)">Approver view</strong> to see the post-submission screens.' +
+      '</div>';
+    refreshHeight('first-body');
+    // Reveal reviewer and approver tabs
+    document.getElementById('tab-reviewer').style.display = '';
+    document.getElementById('tab-approver').style.display = '';
+    // Update header badge on first tab
+    const hdr = document.querySelector('#view-first .badge');
+    hdr.className = 'badge submitted';
+    hdr.textContent = 'Submitted';
+    document.querySelector('#view-first .btn.primary').disabled = true;
+  }
+  document.getElementById('first-submit-modal').addEventListener('click', function(e) { if (e.target === this) closeFirstSubmitModal(); });
+
+  // ── REVIEWER: Resubmit modal (Tab 2) ──
+  function openResubmitModal() {
+    document.getElementById('resubmit-modal').classList.add('visible');
+  }
+  function closeResubmitModal() {
+    document.getElementById('resubmit-modal').classList.remove('visible');
+    resetUpload();
+    document.getElementById('btn-resubmit').disabled = true;
+  }
+  function validateResubmit() {
+    const hasComment = document.getElementById('resubmit-comment').value.trim().length > 0;
+    document.getElementById('btn-resubmit').disabled = !(hasComment && selectedFile);
+  }
+  function onFileSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    selectedFile = input.files[0];
+    const size = (selectedFile.size / (1024*1024)).toFixed(1) + ' MB';
+    document.getElementById('upload-row').classList.add('has-file');
+    document.getElementById('upload-text').textContent = selectedFile.name;
+    document.getElementById('upload-subtext').textContent = size;
+    document.getElementById('upload-file-icon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green-dot)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    document.getElementById('upload-icon-btn').innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    validateResubmit();
+  }
+  function resetUpload() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('upload-row').classList.remove('has-file');
+    document.getElementById('upload-text').innerHTML = 'Attach supporting documentation <span style="color:var(--red-dot)">*</span>';
+    document.getElementById('upload-subtext').textContent = 'PDF, DOCX, XLSX up to 20MB';
+    document.getElementById('upload-file-icon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    document.getElementById('upload-icon-btn').innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+    validateResubmit();
+  }
+  function submitResubmit() {
+    const comment = document.getElementById('resubmit-comment').value.trim();
+    if (!comment) return;
+    const stamp = nowStamp();
+    const fname = selectedFile ? selectedFile.name : null;
+    const fsize = selectedFile ? (selectedFile.size / (1024*1024)).toFixed(1) + ' MB' : null;
+    closeResubmitModal();
+    prependEntry('rev-log', stamp, 'Sarah Mitchell', 'submitted', 'Submitted', comment);
+    prependEntry('app-log', stamp, 'Sarah Mitchell', 'submitted', 'Submitted', comment);
+    updateDocs(fname, fsize, stamp);
+    setBadge('rev-badge', 'rev-badge-text', 'submitted', 'Submitted');
+    setBadge('app-badge', 'app-badge-text', 'submitted', 'Submitted');
+    document.getElementById('btn-submit-for-review').disabled = true;
+    document.getElementById('btn-sendback').disabled = false;
+    document.getElementById('btn-lock').disabled     = false;
+    refreshHeight('rev-body');
+    refreshHeight('app-body');
+    document.getElementById('resubmit-comment').value = 'Reviewed all statements and submitting for review with additional documentation.';
+  }
+  document.getElementById('resubmit-modal').addEventListener('click', function(e) { if (e.target === this) closeResubmitModal(); });
+
+  // ── APPROVER: Send back ──
+  function openSendBack() {
+    document.getElementById('sendback-area').classList.add('visible');
+    document.getElementById('btn-sendback').style.display = 'none';
+    document.getElementById('sendback-comment').focus();
+    refreshHeight('app-body');
+  }
+  function cancelSendBack() {
+    document.getElementById('sendback-area').classList.remove('visible');
+    document.getElementById('sendback-comment').value = '';
+    document.getElementById('btn-sendback-submit').disabled = true;
+    document.getElementById('btn-sendback').style.display = '';
+    refreshHeight('app-body');
+  }
+  function onSendbackInput() {
+    document.getElementById('btn-sendback-submit').disabled =
+      document.getElementById('sendback-comment').value.trim().length === 0;
+  }
+  function submitSendBack() {
+    const comment = document.getElementById('sendback-comment').value.trim();
+    if (!comment) return;
+    const stamp = nowStamp();
+    prependEntry('app-log', stamp, 'James Crawford', 'sent', 'Sent for revision', comment);
+    prependEntry('rev-log', stamp, 'James Crawford', 'sent', 'Sent for revision', comment);
+    setBadge('app-badge', 'app-badge-text', 'open', 'Open');
+    setBadge('rev-badge', 'rev-badge-text', 'open', 'Open');
+    document.getElementById('btn-lock').disabled              = true;
+    document.getElementById('btn-sendback').disabled          = true;
+    document.getElementById('btn-sendback').style.display     = '';
+    document.getElementById('btn-submit-for-review').disabled = false;
+    document.getElementById('sendback-area').classList.remove('visible');
+    document.getElementById('sendback-comment').value = '';
+    document.getElementById('btn-sendback-submit').disabled = true;
+    refreshHeight('app-body');
+    refreshHeight('rev-body');
+  }
+
+  // ── APPROVER: Lock ──
+  function openLockDialog()  { document.getElementById('lock-dialog').classList.add('visible'); }
+  function closeLockDialog() { document.getElementById('lock-dialog').classList.remove('visible'); }
+  function confirmLock() {
+    closeLockDialog();
+    const stamp = nowStamp();
+    const msg = 'All revisions have been reviewed and found satisfactory. The environmental assessment is complete and meets all regulatory requirements. This application is now locked.';
+    prependEntry('app-log', stamp, 'James Crawford', 'locked', 'Locked', msg);
+    prependEntry('rev-log', stamp, 'James Crawford', 'locked', 'Locked', msg);
+    setBadge('app-badge', 'app-badge-text', 'locked', 'Locked');
+    setBadge('rev-badge', 'rev-badge-text', 'locked', 'Locked');
+    document.getElementById('btn-lock').disabled              = true;
+    document.getElementById('btn-sendback').disabled          = true;
+    document.getElementById('btn-submit-for-review').disabled = true;
+    refreshHeight('app-body');
+    refreshHeight('rev-body');
+  }
+  document.getElementById('lock-dialog').addEventListener('click', function(e) { if (e.target === this) closeLockDialog(); });
+
+  // ── Init ──
+  document.querySelectorAll('.exp-body').forEach(initBody);
+</script>
+</body>
+</html>
